@@ -32,20 +32,20 @@ settings_file = os.path.join(os.getcwd(), "settings.yaml")
 BlobApi(OmegaConf.load(settings_file))
 app = FastAPI()
 
-@app.get("/")
+@app.get("/api")
 def read_root():
     return {"message": "Hello, FastAPI!"}
 
-@app.get("/items/{item_id}")
+@app.get("/api/items/{item_id}")
 def read_item(item_id: int, q: str = None):
     return {"item_id": item_id, "query": q}
 
 
-@app.get("/health")
+@app.get("/api/health")
 def check_health():
     return {"health": "ok", "check": datetime.now()}
 
-@app.post("/analysis/social/louvain")
+@app.post("/api/analysis/social/louvain")
 async def do_louvain(file: UploadFile = File(...), name: str=None, col:str="IDs", sep: str=";"):
     name = name if name else generate_random_string(10)
     df = pd.read_csv(io.BytesIO(await file.read()))
