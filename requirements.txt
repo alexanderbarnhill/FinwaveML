@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+pandas
+pyvis
+openpyxl
+networkx
+matplotlib
+python-louvain
+scipy
+scikit-learn
+igraph
+cairocffi
+python-multipart
+azure-storage-blob
+azure-identity
+omegaconf
