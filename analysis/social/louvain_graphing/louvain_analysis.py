@@ -16,21 +16,48 @@ from utilities.plotting import Plt2Pil
 
 
 
-def do_persist_analysis(df, name=None, col="IDs", sep=";"):
-    G, pos, modularity_communities = do_louvain_analysis(df, name, col, sep)
+def do_persist_analysis(df,
+                        name=None,
+                        col="IDs",
+                        sep=";",
+                        width=25,
+                        height=25,
+                        outer_scale=14,
+                        inner_scale=7,
+                        node_size=750,
+                        cmap='Accent',
+                        node_alpha=1.0,
+                        edge_alpha=0.5,
+                        label_size=10,
+                        img_format='png'):
+    G, pos, modularity_communities = do_louvain_analysis(df, name, col, sep, outer_scale, inner_scale)
     log.info(f"Analysis complete. Attempting to persist")
-    plot_thread = threading.Thread(target=plot_louvain_analysis, args=(G, pos, modularity_communities, name))
+    plot_thread = threading.Thread(target=plot_louvain_analysis, args=(
+        G, pos, modularity_communities, name, width, height, node_size, cmap, node_alpha, edge_alpha, label_size, img_format
+    ))
     plot_thread.start()
 
 
 
 
-def plot_louvain_analysis(G, pos, modularity_communities, name):
-    fig = plt.figure(figsize=(25, 25))
+def plot_louvain_analysis(G,
+                          pos,
+                          modularity_communities,
+                          name,
+                          width=25,
+                          height=25,
+                          node_size=750,
+                          cmap='Accent',
+                          node_alpha=1.0,
+                          edge_alpha=0.5,
+                          label_size=10,
+                          img_format='png'
+                          ):
+    fig = plt.figure(figsize=(width, height))
     nx.draw_networkx_nodes(
-        G, pos, node_size=750,
+        G, pos, node_size=node_size,
         node_color=[modularity_communities[n] for n in G.nodes()],
-        cmap=plt.get_cmap("Accent"), alpha=1.0
+        cmap=plt.get_cmap(cmap), alpha=node_alpha
     )
     ax = plt.gca()
     G = nx.Graph(G)
@@ -41,19 +68,19 @@ def plot_louvain_analysis(G, pos, modularity_communities, name):
         patch = FancyArrowPatch(
             pos[src], pos[dst],
             connectionstyle="arc3,rad=0.2",
-            color="gray", alpha=0.5, lw=1,
+            color="gray", alpha=edge_alpha, lw=1,
             arrowstyle="-",
             mutation_scale=10
         )
         ax.add_patch(patch)
-    nx.draw_networkx_labels(G, pos, font_size=10)
+    nx.draw_networkx_labels(G, pos, font_size=label_size)
     storage_client = BlobApi()
     img_buffer = io.BytesIO()
-    fig.savefig(img_buffer, format='png')
+    fig.savefig(img_buffer, format=img_format)
     img_buffer.seek(0)  # Move to the beginning of the BytesIO buffer
 
     # Upload the image to Azure Blob storage
-    storage_client.upload_blob("louvain", f"{name}_louvain.png", img_buffer)
+    storage_client.upload_blob("louvain", f"{name}_louvain.{img_format}", img_buffer)
     img_buffer.close()
 
 def build_database(df, col="KW IDs", sep=" "):
@@ -70,7 +97,7 @@ def build_database(df, col="KW IDs", sep=" "):
             value += [np.nan] * (largest_group - len(value))
     return pd.DataFrame(data)
 
-def do_louvain_analysis(df, name=None, col="IDs", sep=";"):
+def do_louvain_analysis(df, name=None, col="IDs", sep=";", outer_scale=14.0, inner_scale=7.0):
     df = build_database(df, col=col, sep=sep)
     edge_list = []
     df = df.transpose()
@@ -93,12 +120,12 @@ def do_louvain_analysis(df, name=None, col="IDs", sep=";"):
     community_graph.add_edges_from(
         [(com, com) for com in communities.keys()]
     )
-    community_pos = nx.spring_layout(community_graph, seed=42, scale=12.0)
+    community_pos = nx.spring_layout(community_graph, seed=42, scale=outer_scale)
 
     pos = {}
     for comm, nodes in communities.items():
         subG = G.subgraph(nodes)
-        sub_pos = nx.spring_layout(subG, seed=42, scale=5)
+        sub_pos = nx.spring_layout(subG, seed=42, scale=inner_scale)
         for node, p in sub_pos.items():
             pos[node] = community_pos[comm] + p
 

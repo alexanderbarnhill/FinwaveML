@@ -46,9 +46,24 @@ def check_health():
     return {"health": "ok", "check": datetime.now()}
 
 @app.post("/api/analysis/social/louvain")
-async def do_louvain(file: UploadFile = File(...), name: str=None, col:str="IDs", sep: str=";"):
+async def do_louvain(
+        file: UploadFile = File(...),
+        name: str=None,
+        col:str="IDs",
+        sep: str=";",
+        width=25,
+        height=25,
+        outer_scale=14,
+        inner_scale=7,
+        node_size=750,
+        cmap='Accent',
+        node_alpha=1.0,
+        edge_alpha=0.5,
+        label_size=10,
+        img_format='png'
+):
     name = name if name else generate_random_string(10)
     df = pd.read_csv(io.BytesIO(await file.read()))
-    do_persist_analysis(df, name, col, sep)
+    do_persist_analysis(df, name, col, sep, width, height, outer_scale, inner_scale,node_size,cmap,node_alpha,edge_alpha,label_size, img_format)
     log.info("Analysis complete")
     return {'success': True}
