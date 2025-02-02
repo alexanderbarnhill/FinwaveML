@@ -73,6 +73,7 @@ def build_database(df, col="KW IDs", sep=" "):
 def do_louvain_analysis(df, name=None, col="IDs", sep=";"):
     df = build_database(df, col=col, sep=sep)
     edge_list = []
+    df = df.transpose()
     for _, row in df.iterrows():
         ids = row.dropna().values
         ids = [i.replace("SGB", "") for i in ids]
