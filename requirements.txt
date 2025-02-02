@@ -14,3 +14,5 @@ python-multipart
 azure-storage-blob
 azure-identity
 omegaconf
+jinja2
+gunicorn
