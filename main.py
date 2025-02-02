@@ -51,16 +51,16 @@ async def do_louvain(
         name: str=None,
         col:str="IDs",
         sep: str=";",
-        width=25,
-        height=25,
-        outer_scale=14,
-        inner_scale=7,
-        node_size=750,
-        cmap='Accent',
-        node_alpha=1.0,
-        edge_alpha=0.5,
-        label_size=10,
-        img_format='png'
+        width: int=25,
+        height: int=25,
+        outer_scale: float=14,
+        inner_scale: float=7,
+        node_size: int=750,
+        cmap: str='Accent',
+        node_alpha: float=1.0,
+        edge_alpha: float=0.5,
+        label_size: int=10,
+        img_format: str='png'
 ):
     name = name if name else generate_random_string(10)
     df = pd.read_csv(io.BytesIO(await file.read()))
