@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 import logging as log
 import sys
 from analysis.social.louvain_graphing.louvain_analysis import do_louvain_analysis, plot_louvain_analysis, do_persist_analysis
-
+from datetime import datetime
 import pandas as pd
 import io
 
@@ -41,12 +41,14 @@ def read_item(item_id: int, q: str = None):
     return {"item_id": item_id, "query": q}
 
 
+@app.get("/health")
+def check_health():
+    return {"health": "ok", "check": datetime.now()}
+
 @app.post("/analysis/social/louvain")
 async def do_louvain(file: UploadFile = File(...), name: str=None, col:str="IDs", sep: str=";"):
     name = name if name else generate_random_string(10)
     df = pd.read_csv(io.BytesIO(await file.read()))
     do_persist_analysis(df, name, col, sep)
     log.info("Analysis complete")
-    # path = plot_louvain_analysis(a, b, c, None)
-    # print("Plotting Complete")
     return {'success': True}
