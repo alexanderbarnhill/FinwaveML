@@ -76,7 +76,7 @@ def plot_louvain_analysis(G,
     nx.draw_networkx_labels(G, pos, font_size=label_size)
     storage_client = BlobApi()
     img_buffer = io.BytesIO()
-    fig.savefig(img_buffer, format=img_format)
+    fig.savefig(img_buffer, format=img_format, bbox_inches='tight', pad_inches=0, transparent=True if img_format.lower() == 'png' else False)
     img_buffer.seek(0)  # Move to the beginning of the BytesIO buffer
 
     # Upload the image to Azure Blob storage
