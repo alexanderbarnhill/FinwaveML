@@ -47,4 +47,4 @@ class BlobApi:
         if blob_client.exists():
             log.info(f"Blob {blob_name} already exists")
             return
-        blob_client.upload_blob(content)
+        blob_client.upload_blob(content, overwrite=True)
