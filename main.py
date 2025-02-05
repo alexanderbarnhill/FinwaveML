@@ -1,18 +1,18 @@
 import os
 
 from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import FileResponse
 import logging as log
 import sys
-from analysis.social.louvain_graphing.louvain_analysis import do_louvain_analysis, plot_louvain_analysis, do_persist_analysis
 from datetime import datetime
 import pandas as pd
 import io
 
 from omegaconf import OmegaConf
 
+from jobs.models.louvain import LouvainJob
 from utilities.file import generate_random_string
 from utilities.persistence.results.azure.image_storage import BlobApi
+from jobs.queue_service import queue_service
 
 log.basicConfig(level=log.INFO, format="%(asctime)s : %(message)s")
 
@@ -29,8 +29,8 @@ handler = log.StreamHandler(stream=sys.stdout)
 logger.addHandler(handler)
 
 settings_file = os.path.join(os.getcwd(), "settings.yaml")
-BlobApi(OmegaConf.load(settings_file))
 app = FastAPI()
+
 
 @app.get("/api")
 def read_root():
@@ -64,6 +64,22 @@ async def do_louvain(
 ):
     name = name if name else generate_random_string(10)
     df = pd.read_csv(io.BytesIO(await file.read()))
-    do_persist_analysis(df, name, col, sep, width, height, outer_scale, inner_scale,node_size,cmap,node_alpha,edge_alpha,label_size, img_format)
-    log.info("Analysis complete")
-    return {'success': True}
+    job = LouvainJob(
+        df=df,
+        name=name,
+        col=col,
+        sep=sep,
+        width=width,
+        height=height,
+        outer_scale=outer_scale,
+        inner_scale=inner_scale,
+        node_size=node_size,
+        cmap=cmap,
+        node_alpha=node_alpha,
+        edge_alpha=edge_alpha,
+        label_size=label_size,
+        img_format=img_format
+    )
+    queue_service.enqueue(job)
+
+    return {'job_registered': True}

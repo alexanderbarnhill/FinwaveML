@@ -1,21 +1,21 @@
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 import logging as log
-
+import os
 from utilities.data_descriptor import singleton
 
 
 @singleton
 class BlobApi:
-    def __init__(self, configuration):
+    def __init__(self):
         log.info("Initializing BlobApi.")
-        self.configuration = configuration
+        self.storage_account = os.getenv("AZ_BLOB_STORAGE_ACCOUNT_NAME")
         self.url = self._get_blob_storage_url()
         log.info(f"URL: {self.url}")
 
 
     def _get_blob_storage_url(self):
-        return f"https://{self.configuration.account_name}.blob.core.windows.net"
+        return f"https://{self.storage_account}.blob.core.windows.net"
 
     def get_blob_service_client(self):
         default_credential = DefaultAzureCredential()
@@ -48,3 +48,5 @@ class BlobApi:
             log.info(f"Blob {blob_name} already exists")
             return
         blob_client.upload_blob(content, overwrite=True)
+
+blob_api = BlobApi()

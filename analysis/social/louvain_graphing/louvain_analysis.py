@@ -1,41 +1,38 @@
+import concurrent
 import io
 import os
 import logging as log
 import threading
-import pandas as pd
-import numpy as np
+import concurrent.futures
+from datetime import datetime
+
 import networkx as nx
 from itertools import combinations
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from community import community_louvain
 from matplotlib.patches import FancyArrowPatch
+from multipart import file_path
 
+from jobs.models.louvain import LouvainJob
 from utilities.data_loading import load_data
-from utilities.persistence.results.azure.image_storage import BlobApi
+from utilities.persistence.results.azure.image_storage import blob_api
 from utilities.plotting import Plt2Pil
 
+from utilities.messaging.azure.pub_sub_client import PubSubClient
 
-
-def do_persist_analysis(df,
-                        name=None,
-                        col="IDs",
-                        sep=";",
-                        width=25,
-                        height=25,
-                        outer_scale=14,
-                        inner_scale=7,
-                        node_size=750,
-                        cmap='Accent',
-                        node_alpha=1.0,
-                        edge_alpha=0.5,
-                        label_size=10,
-                        img_format='png'):
-    G, pos, modularity_communities = do_louvain_analysis(df, name, col, sep, outer_scale, inner_scale)
+def do_persist_analysis(job: LouvainJob):
+    G, pos, modularity_communities = do_louvain_analysis(job.df, job.name, job.col, job.sep, job.outer_scale, job.inner_scale)
     log.info(f"Analysis complete. Attempting to persist")
-    plot_thread = threading.Thread(target=plot_louvain_analysis, args=(
-        G, pos, modularity_communities, name, width, height, node_size, cmap, node_alpha, edge_alpha, label_size, img_format
-    ))
-    plot_thread.start()
+    container, path = plot_louvain_analysis(G, pos, modularity_communities, job.name, job.width, job.height, job.node_size, job.cmap, job.node_alpha, job.edge_alpha, job.label_size, job.img_format, job.container)
+    client = PubSubClient()
+    client.send_message({
+        "type": "louvain_plot",
+        "subject": "louvain_analysis_complete",
+        "container": container,
+        "file_path": path
+    })
 
 
 
@@ -51,7 +48,8 @@ def plot_louvain_analysis(G,
                           node_alpha=1.0,
                           edge_alpha=0.5,
                           label_size=10,
-                          img_format='png'
+                          img_format='png',
+                          container="louvain"
                           ):
     fig = plt.figure(figsize=(width, height))
     nx.draw_networkx_nodes(
@@ -63,7 +61,6 @@ def plot_louvain_analysis(G,
     G = nx.Graph(G)
     log.info("Number of edges: %d", len(G.edges()))
     for idx, edge in enumerate(G.edges()):
-        log.info("Processing edge %d of %d", idx, len(G.edges()))
         src, dst = edge
         patch = FancyArrowPatch(
             pos[src], pos[dst],
@@ -74,14 +71,14 @@ def plot_louvain_analysis(G,
         )
         ax.add_patch(patch)
     nx.draw_networkx_labels(G, pos, font_size=label_size)
-    storage_client = BlobApi()
     img_buffer = io.BytesIO()
     fig.savefig(img_buffer, format=img_format, bbox_inches='tight', pad_inches=0, transparent=True if img_format.lower() == 'png' else False)
     img_buffer.seek(0)  # Move to the beginning of the BytesIO buffer
-
+    blob_name = f"{datetime.strftime(datetime.now(), '%Y-%m-%d_%H-%M-%S')}_{name}_louvain.{img_format}"
     # Upload the image to Azure Blob storage
-    storage_client.upload_blob("louvain", f"{name}_louvain.{img_format}", img_buffer)
+    blob_api.upload_blob(container, blob_name, img_buffer)
     img_buffer.close()
+    return container, blob_name
 
 def build_database(df, col="KW IDs", sep=" "):
     data = {}

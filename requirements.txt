@@ -16,3 +16,5 @@ azure-identity
 omegaconf
 jinja2
 gunicorn
+azure-messaging-webpubsubservice
+websockets
