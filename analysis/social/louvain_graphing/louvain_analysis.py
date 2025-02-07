@@ -35,6 +35,7 @@ def do_persist_analysis(job: LouvainJob):
             "errors": [],
             "container": container,
             "file_path": path,
+            "successful": True
         },
         "id": job.id
     })
