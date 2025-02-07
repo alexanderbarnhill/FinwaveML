@@ -6,6 +6,7 @@ import pandas as pd
 
 @dataclass
 class LouvainJob:
+    id: str
     type = "louvain"
     df: pd.DataFrame = field(default_factory=pd.DataFrame)
     name: str = ""

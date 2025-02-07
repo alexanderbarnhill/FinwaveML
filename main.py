@@ -48,6 +48,7 @@ def check_health():
 @app.post("/api/analysis/social/louvain")
 async def do_louvain(
         file: UploadFile = File(...),
+        job_id: str=None,
         name: str=None,
         col:str="IDs",
         sep: str=";",
@@ -63,9 +64,11 @@ async def do_louvain(
         img_format: str='png'
 ):
     name = name if name else generate_random_string(10)
+    job_id = job_id if job_id else generate_random_string(10)
     df = pd.read_csv(io.BytesIO(await file.read()))
     log.info(f"Data Size: {len(df)}")
     job = LouvainJob(
+        id=job_id,
         df=df,
         name=name,
         col=col,

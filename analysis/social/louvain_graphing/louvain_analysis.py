@@ -28,10 +28,15 @@ def do_persist_analysis(job: LouvainJob):
     container, path = plot_louvain_analysis(G, pos, modularity_communities, job.name, job.width, job.height, job.node_size, job.cmap, job.node_alpha, job.edge_alpha, job.label_size, job.img_format, job.container)
     client = PubSubClient()
     client.send_message({
-        "type": "louvain_plot",
+        "type": "louvain",
         "subject": "louvain_analysis_complete",
-        "container": container,
-        "file_path": path
+        "status": "Finished",
+        "results": {
+            "errors": [],
+            "container": container,
+            "file_path": path,
+        },
+        "id": job.id
     })
 
 
