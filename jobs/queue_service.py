@@ -1,5 +1,7 @@
 import threading
 import queue
+import time
+
 from analysis.social.louvain_graphing.louvain_analysis import do_persist_analysis
 import logging as log
 
@@ -27,7 +29,9 @@ class QueueService:
             try:
                 job = self.queue.get()
                 if job is None:
-                    break  # Stop signal
+                    log.info(f"No job. Sleeping.")
+                    time.sleep(5)
+                    continue
                 self.process_job(job)
             except Exception as e:
                 log.error(f"Error processing job: {e}")
