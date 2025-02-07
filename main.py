@@ -64,6 +64,7 @@ async def do_louvain(
 ):
     name = name if name else generate_random_string(10)
     df = pd.read_csv(io.BytesIO(await file.read()))
+    log.info(f"Data Size: {len(df)}")
     job = LouvainJob(
         df=df,
         name=name,

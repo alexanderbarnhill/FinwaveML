@@ -1,12 +1,7 @@
 import threading
 import queue
-import time
-from typing import cast
 from analysis.social.louvain_graphing.louvain_analysis import do_persist_analysis
-from jobs.job import Job
-from jobs.models.louvain import LouvainJob
-from utilities.data_descriptor import singleton
-
+import logging as log
 
 class QueueService:
     _instance = None
@@ -40,13 +35,14 @@ class QueueService:
     def enqueue(self, job):
         """Adds a job to the queue."""
         self.queue.put(job)
+        log.info(f"Job entered into queue")
 
     def process_job(self, job):
         """Process the job (replace this with your actual task)."""
-        print(f"Processing job: {job.type}")
+        log.info(f"Processing job: {job.type}")
         if job.type == "louvain":
             do_persist_analysis(job)
-        print(f"Job completed: {job.type}")
+        log.info(f"Job completed: {job.type}")
 
 # Ensure a single instance is created
 queue_service = QueueService()
