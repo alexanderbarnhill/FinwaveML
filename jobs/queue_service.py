@@ -23,14 +23,14 @@ class QueueService:
     def _worker(self):
         """Continuously processes jobs in the queue."""
         while True:
-            job = self.queue.get()
-            if job is None:
-                break  # Stop signal
-            self.process_job(job)
-            # try:
-            #
-            # except Exception as e:
-            #     print(f"Error processing job: {e}")
+
+            try:
+                job = self.queue.get()
+                if job is None:
+                    break  # Stop signal
+                self.process_job(job)
+            except Exception as e:
+                log.error(f"Error processing job: {e}")
 
     def enqueue(self, job):
         """Adds a job to the queue."""
